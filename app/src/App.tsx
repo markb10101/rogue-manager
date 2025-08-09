@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react'
 import TopBar from './ui/TopBar'
 import { useGame } from './game/store'
 import ProgressBar from './ui/ProgressBar'
+import Toast from './ui/Toast'
 
 export default function App() {
   const advance = useGame((s) => s.advance)
-  const { gameMinutes, timeScale, setTimeScale, addMinutes, startDemoMission, demo, resetDemo } = useGame()
+  const { gameMinutes, timeScale, setTimeScale, addMinutes, startFieldContract, contract, resetContract, hireFieldOp } = useGame()
 
   const rafId = useRef(0)
   const last = useRef(performance.now())
@@ -23,6 +24,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <TopBar />
+      <Toast />
 
       <div className="mx-auto max-w-5xl px-4 py-6 space-y-6">
         <section className="rounded-2xl bg-white p-4 shadow-sm">
@@ -31,7 +33,7 @@ export default function App() {
             1s real-time = 1 in-game minute. Use the Time Torture Chamber to jump time.
           </p>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
             <div className="rounded-lg border bg-gray-50 p-3">
               <div className="text-sm font-medium">Time Scale</div>
               <input
@@ -53,11 +55,18 @@ export default function App() {
             </div>
 
             <div className="rounded-lg border bg-gray-50 p-3">
-              <div className="text-sm font-medium">Demo Mission</div>
-              {demo.status !== 'active' ? (
+              <div className="text-sm font-medium">HR</div>
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => hireFieldOp()} className="rounded-md bg-indigo-600 px-3 py-1 text-white">Hire Field Op (5g wage)</button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-gray-50 p-3">
+              <div className="text-sm font-medium">Field Ops</div>
+              {contract.status !== 'active' ? (
                 <div className="mt-2 flex gap-2">
-                  <button onClick={() => startDemoMission(10)} className="rounded-md bg-indigo-600 px-3 py-1 text-white">Start (10m)</button>
-                  <button onClick={() => resetDemo()} className="rounded-md border px-3 py-1">Reset</button>
+                  <button onClick={() => startFieldContract()} className="rounded-md bg-indigo-600 px-3 py-1 text-white">Start Contract (10m, pays 5g)</button>
+                  <button onClick={() => resetContract()} className="rounded-md border px-3 py-1">Reset</button>
                 </div>
               ) : (
                 <div className="mt-2 text-xs opacity-70">Active…</div>
@@ -66,11 +75,11 @@ export default function App() {
           </div>
 
           <div className="mt-6">
-            {demo.status !== 'idle' && (
+            {contract.status !== 'idle' && (
               <ProgressBar
-                label={demo.name + (demo.status === 'complete' ? ' — Complete' : '')}
-                startAt={demo.startAt}
-                endAt={demo.endAt}
+                label={contract.name + (contract.status === 'complete' ? ' — Complete' : '')}
+                startAt={contract.startAt}
+                endAt={contract.endAt}
                 clock={gameMinutes}
               />
             )}
