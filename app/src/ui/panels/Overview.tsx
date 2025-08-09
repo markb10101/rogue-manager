@@ -2,12 +2,20 @@ import ProgressBar from "../ProgressBar";
 import { useGame } from "../../game/store";
 
 export default function Overview() {
-  const { gameMinutes, timeScale, setTimeScale, addMinutes, startDemoMission, demo, resetDemo } = useGame();
+  const { timeScale, setTimeScale, addMinutes, gameMinutes, contract } = useGame((s) => ({
+    timeScale: s.timeScale,
+    setTimeScale: s.setTimeScale,
+    addMinutes: s.addMinutes,
+    gameMinutes: s.gameMinutes,
+    contract: s.contract, // from payroll/HR PR
+  }));
+
+  const active = !!contract && contract.status !== "idle";
 
   return (
     <div className="space-y-4">
       <p className="text-sm opacity-70">
-        Prototype loop: 1s real-time = 1 in-game minute. Use the Time Torture Chamber to jump time.
+        1s real-time = 1 in-game minute. Use the Time Torture Chamber to jump time.
       </p>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -32,28 +40,19 @@ export default function Overview() {
         </div>
 
         <div className="rounded-lg border bg-gray-50 p-3">
-          <div className="text-sm font-medium">Demo Mission</div>
-          {demo.status !== "active" ? (
-            <div className="mt-2 flex gap-2">
-              <button onClick={() => startDemoMission(10)} className="rounded-md bg-indigo-600 px-3 py-1 text-white">Start (10m)</button>
-              <button onClick={() => resetDemo()} className="rounded-md border px-3 py-1">Reset</button>
-            </div>
-          ) : (
-            <div className="mt-2 text-xs opacity-70">Active…</div>
-          )}
+          <div className="text-sm font-medium">Status</div>
+          <div className="mt-2 text-xs opacity-70">{active ? "Contract active" : "No active contract"}</div>
         </div>
       </div>
 
-      <div>
-        {demo.status !== "idle" && (
-          <ProgressBar
-            label={demo.name + (demo.status === "complete" ? " — Complete" : "")}
-            startAt={demo.startAt}
-            endAt={demo.endAt}
-            clock={gameMinutes}
-          />
-        )}
-      </div>
+      {active && (
+        <ProgressBar
+          label={(contract?.name ?? "Contract") + (contract?.status === "complete" ? " — Complete" : "")}
+          startAt={contract?.startAt ?? 0}
+          endAt={contract?.endAt ?? 0}
+          clock={gameMinutes}
+        />
+      )}
     </div>
   );
 }
