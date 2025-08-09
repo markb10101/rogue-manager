@@ -2,10 +2,13 @@ import { useEffect, useRef } from 'react'
 import TopBar from './ui/TopBar'
 import { useGame } from './game/store'
 import ProgressBar from './ui/ProgressBar'
+import TTCModal from './ui/TTCModal'
+import { Toasts } from './ui/Toasts'
+import { TTC_OPTIONS_MINUTES } from './game/balance'
 
 export default function App() {
   const advance = useGame((s) => s.advance)
-  const { gameMinutes, timeScale, setTimeScale, addMinutes, startDemoMission, demo, resetDemo } = useGame()
+  const { gameMinutes, timeScale, setTimeScale, addMinutes, startDemoMission, demo, resetDemo, ttcOpen } = useGame()
 
   const rafId = useRef(0)
   const last = useRef(performance.now())
@@ -46,9 +49,15 @@ export default function App() {
             <div className="rounded-lg border bg-gray-50 p-3">
               <div className="text-sm font-medium">Time Torture Chamber</div>
               <div className="mt-2 flex gap-2">
-                <button onClick={() => addMinutes(10)} className="rounded-md bg-black px-3 py-1 text-white">+10m</button>
-                <button onClick={() => addMinutes(30)} className="rounded-md bg-black px-3 py-1 text-white">+30m</button>
-                <button onClick={() => addMinutes(60)} className="rounded-md bg-black px-3 py-1 text-white">+60m</button>
+                {TTC_OPTIONS_MINUTES.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => addMinutes(m)}
+                    className="rounded-md bg-black px-3 py-1 text-white"
+                  >
+                    +{m}m
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -77,6 +86,8 @@ export default function App() {
           </div>
         </section>
       </div>
+      {ttcOpen && <TTCModal />}
+      <Toasts />
     </div>
   )
 }

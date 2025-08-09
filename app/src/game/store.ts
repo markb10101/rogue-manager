@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { MINUTES_PER_REAL_SECOND } from './balance'
 import { nextPayrollDueAt } from './time'
+import { useToasts } from '../ui/Toasts'
 
 type MissionStatus = 'idle' | 'active' | 'complete'
 
@@ -20,6 +21,7 @@ interface GameState {
   projectedPayroll: number
   payrollDueAt: number
   demo: DemoMission
+  ttcOpen: boolean
 
   advance: (realDeltaMs: number) => void
   addMinutes: (mins: number) => void
@@ -27,6 +29,8 @@ interface GameState {
 
   startDemoMission: (durationMins?: number) => void
   resetDemo: () => void
+  openTTC: () => void
+  closeTTC: () => void
 }
 
 function makeInitialMission(): DemoMission {
@@ -40,6 +44,7 @@ export const useGame = create<GameState>((set, get) => ({
   projectedPayroll: 50,
   payrollDueAt: nextPayrollDueAt(0),
   demo: makeInitialMission(),
+  ttcOpen: false,
 
   advance: (realDeltaMs: number) => {
     const s = get()
@@ -51,9 +56,12 @@ export const useGame = create<GameState>((set, get) => ({
     if (demo.status === 'active' && gameMinutes >= demo.endAt) {
       demo.status = 'complete'
       gold += demo.payout
+      useToasts.getState().addToast(`Contract complete: +${demo.payout}g`)
     }
 
     if (gameMinutes >= payrollDueAt) {
+      gold -= projectedPayroll
+      useToasts.getState().addToast(`Paid ${projectedPayroll}g in wages`)
       payrollDueAt = nextPayrollDueAt(gameMinutes)
       projectedPayroll = projectedPayroll
     }
@@ -77,4 +85,6 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   resetDemo: () => set({ demo: makeInitialMission() }),
+  openTTC: () => set({ ttcOpen: true }),
+  closeTTC: () => set({ ttcOpen: false }),
 }))
