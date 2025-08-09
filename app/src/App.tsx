@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import TopBar from "./ui/TopBar";
+import Toast from "./ui/Toast";
 import Overview from "./ui/panels/Overview";
 import HR from "./ui/panels/HR";
 import FieldOps from "./ui/panels/FieldOps";
@@ -31,6 +32,7 @@ export default function App() {
   const advance = useGame((s) => s.advance);
   const [tab, setTab] = useState<TabKey>(getInitialTab());
 
+  // RAF loop
   const rafId = useRef(0);
   const last = useRef(performance.now());
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function App() {
     return () => cancelAnimationFrame(rafId.current);
   }, [advance]);
 
+  // hash routing
   useEffect(() => {
     const onHash = () => {
       const k = (window.location.hash.slice(1) as TabKey) || "overview";
@@ -63,6 +66,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <TopBar />
+      <Toast />
+
       <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
         <nav className="flex flex-wrap gap-2">
           {TABS.map(({ key, label }) => (
