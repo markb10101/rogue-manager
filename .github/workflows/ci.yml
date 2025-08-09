@@ -17,5 +17,7 @@ jobs:
           node-version: 20
       - name: Use public npm registry
         run: echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+      - name: Ensure no lockfile (workaround npm optional-deps bug)
+        run: rm -f package-lock.json
       - run: npm install --no-audit --no-fund
       - run: npm run build
