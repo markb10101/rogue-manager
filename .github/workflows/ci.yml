@@ -1,0 +1,23 @@
+name: CI / app build
+on:
+  pull_request:
+    branches: [ feature/prototype-v0, main ]
+  push:
+    branches: [ feature/prototype-v0 ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Use public npm registry
+        run: echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+      - name: Ensure no lockfile (workaround npm optional-deps bug)
+        run: rm -f package-lock.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
