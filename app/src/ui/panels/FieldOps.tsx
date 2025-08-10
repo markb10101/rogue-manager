@@ -30,11 +30,13 @@ export default function FieldOps() {
       <div className="mt-2">
         {contract.status !== "idle" && (
           <ProgressBar
+            key={contract.runId ?? contract.startAt}   // ← this line forces a remount each run
             label={contract.name + (contract.status === "complete" ? " — Complete" : "")}
             startAt={contract.startAt}
             endAt={contract.endAt}
             clock={gameMinutes}
           />
+
         )}
       </div>
     </div>

@@ -10,10 +10,10 @@ type ContractStatus = "idle" | "active" | "complete";
 export type Contract = {
   runId: number;
   name: string;
-  status: ContractStatus;
-  startAt: number;      // game minutes
-  endAt: number;        // game minutes
-  payout: number;       // gold
+  status: "idle" | "active" | "complete";
+  startAt: number;
+  endAt: number;
+  payout: number;
 };
 
 type Toast = { id: number; msg: string; createdAt: number };
@@ -96,11 +96,12 @@ export const useGame = create<State>((set, get) => ({
 
   startFieldContract: () => {
     const s = get();
-    if (s.contract.status === "active") return; // already running
+    if (s.contract.status === "active") return;
     const now = s.gameMinutes;
+    const nextRunId = (s.contract.runId ?? 0) + 1;  // ← ensure a new id each start
     set({
       contract: {
-        runId: runSeq++,
+        runId: nextRunId,
         name: "Contract",
         status: "active",
         startAt: now,
@@ -109,6 +110,7 @@ export const useGame = create<State>((set, get) => ({
       },
     });
   },
+
 
   resetContract: () =>
     set({

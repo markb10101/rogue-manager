@@ -47,9 +47,10 @@ export default function Overview() {
 
       {active && (
         <ProgressBar
-          label={(contract?.name ?? "Contract") + (contract?.status === "complete" ? " — Complete" : "")}
-          startAt={contract?.startAt ?? 0}
-          endAt={contract?.endAt ?? 0}
+          key={contract.runId ?? contract.startAt}   // ← same trick here
+          label={(contract.name ?? "Contract") + (contract.status === "complete" ? " — Complete" : "")}
+          startAt={contract.startAt}
+          endAt={contract.endAt}
           clock={gameMinutes}
         />
       )}
