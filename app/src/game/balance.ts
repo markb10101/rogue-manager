@@ -5,3 +5,6 @@ export const EMA_K = 10;                       // smoothing strength for bars
 export const TTC_OPTIONS_MINUTES = [10, 30, 60];
 export const TOAST_LIFETIME_MS = 2500;
 export const TTC_AMBIENT_INTERVAL_MS = 1000;
+export const FIELD_OP_WAGE = 5;
+export const FIELD_OP_CONTRACT_DURATION = 10;  // minutes
+export const FIELD_OP_CONTRACT_PAYOUT = 5;
