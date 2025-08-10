@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import TopBar from "./ui/TopBar";
-import Toast from "./ui/Toast";
+import { Toasts } from "./ui/Toasts";
 import TTCModal from "./ui/TTCModal";
 import Overview from "./ui/panels/Overview";
 import HR from "./ui/panels/HR";
@@ -68,7 +68,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <TopBar />
-      <Toast />
+      <Toasts />
       {ttcOpen && <TTCModal />}
 
       <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
