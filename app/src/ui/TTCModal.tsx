@@ -39,7 +39,7 @@ export default function TTCModal() {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/90" onClick={closeTTC}>
-      <div className="space-y-6 text-center" onClick={(e) => e.stopPropagation()}>
+      <div className="space-y-6 text-center text-white" onClick={(e) => e.stopPropagation()}>
         <div className="text-sm opacity-70">{lines[idx]}</div>
         <div className="flex justify-center gap-3">
           {TTC_OPTIONS_MINUTES.map((m, i) => (

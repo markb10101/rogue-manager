@@ -28,7 +28,7 @@ export const useToasts = create<ToastStore>((set) => ({
 export function Toasts() {
   const toasts = useToasts((s) => s.toasts)
   return (
-    <div className="fixed bottom-4 right-4 space-y-2 z-50">
+    <div className="fixed right-4 top-14 space-y-2 z-50">
       {toasts.map((t) => (
         <div key={t.id} className="rounded bg-black text-white px-3 py-2 text-sm shadow">
           {t.msg}
