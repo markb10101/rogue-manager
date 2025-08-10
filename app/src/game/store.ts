@@ -1,3 +1,4 @@
+import { useToasts } from "../ui/Toasts";
 import { create } from "zustand";
 import { DAY_MINUTES, MOON_PERIOD_DAYS } from "./balance";
 
@@ -157,7 +158,7 @@ function tick(deltaMin: number, set: any, get: any) {
 
   while (newTime >= due) {
     gold -= projected;
-    get().addToast?.(`Paid ${projected}g in wages`);
+    useToasts.getState().addToast(`Paid ${projected}g in wages`);
     due += PAYROLL_PERIOD_MIN;
   }
 
@@ -165,7 +166,7 @@ function tick(deltaMin: number, set: any, get: any) {
   const c = get().contract;
   if (c.status === "active" && newTime >= c.endAt) {
     gold += c.payout;
-    get().addToast?.(`Contract complete: +${c.payout}g`);
+    useToasts.getState().addToast(`Contract complete: +${c.payout}g`);
     set({ contract: { ...c, status: "complete" } });
   }
 
