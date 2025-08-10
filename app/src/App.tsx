@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import TopBar from "./ui/TopBar";
 import Toast from "./ui/Toast";
+import TTCModal from "./ui/TTCModal";
 import Overview from "./ui/panels/Overview";
 import HR from "./ui/panels/HR";
 import FieldOps from "./ui/panels/FieldOps";
@@ -29,8 +30,9 @@ function getInitialTab(): TabKey {
 }
 
 export default function App() {
-  const advance = useGame((s) => s.advance);
+  const advance = useGame(s => s.advance);
   const [tab, setTab] = useState<TabKey>(getInitialTab());
+  const ttcOpen = useGame(s => s.ttcOpen); // from Codex PR
 
   // RAF loop
   const rafId = useRef(0);
@@ -67,6 +69,7 @@ export default function App() {
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <TopBar />
       <Toast />
+      {ttcOpen && <TTCModal />}
 
       <div className="mx-auto max-w-6xl px-4 py-6 space-y-6">
         <nav className="flex flex-wrap gap-2">
@@ -86,12 +89,7 @@ export default function App() {
         </nav>
 
         <section className="rounded-2xl bg-white p-4 shadow-sm min-h-[200px]">
-          {tab === "overview" && (
-            <>
-              <h1 className="text-2xl font-semibold mb-3">Rogue Manager — Prototype</h1>
-              <Overview />
-            </>
-          )}
+          {tab === "overview" && (<><h1 className="text-2xl font-semibold mb-3">Rogue Manager — Prototype</h1><Overview /></>)}
           {tab === "hr" && <HR />}
           {tab === "fieldops" && <FieldOps />}
           {tab === "accounts" && <Accounts />}
