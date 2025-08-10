@@ -1,80 +1,172 @@
-import { create } from 'zustand'
-import { MINUTES_PER_REAL_SECOND } from './balance'
-import { nextPayrollDueAt } from './time'
+import { create } from "zustand";
+import { DAY_MINUTES, MOON_PERIOD_DAYS } from "./balance";
 
-type MissionStatus = 'idle' | 'active' | 'complete'
+// ---- Types ----
+type Dept = "FieldOps" | null;
+type EmpStatus = "Untrained" | "Trainee" | "Certified" | "Injured" | "Recovering";
+export type Employee = { id: string; dept: Dept; status: EmpStatus; wage: number };
 
-interface DemoMission {
-  id: string
-  name: string
-  startAt: number
-  endAt: number
-  status: MissionStatus
-  payout: number
-}
+type ContractStatus = "idle" | "active" | "complete";
+export type Contract = {
+  runId: number;
+  name: string;
+  status: ContractStatus;
+  startAt: number;      // game minutes
+  endAt: number;        // game minutes
+  payout: number;       // gold
+};
 
-interface GameState {
-  gameMinutes: number
-  timeScale: number
-  gold: number
-  projectedPayroll: number
-  payrollDueAt: number
-  demo: DemoMission
+type Toast = { id: number; msg: string; createdAt: number };
 
-  advance: (realDeltaMs: number) => void
-  addMinutes: (mins: number) => void
-  setTimeScale: (v: number) => void
+type State = {
+  // clock
+  gameMinutes: number;
+  timeScale: number;
+  setTimeScale: (x: number) => void;
+  advance: (realMs: number) => void;  // main loop ticks call this
+  addMinutes: (mins: number) => void; // TTC and dev tools call this
 
-  startDemoMission: (durationMins?: number) => void
-  resetDemo: () => void
-}
+  // money & payroll
+  gold: number;
+  employees: Employee[];
+  projectedPayroll: number;
+  payrollDueAt: number;
+  lastPayrollAt: number;
 
-function makeInitialMission(): DemoMission {
-  return { id: 'demo-1', name: 'Kill Rats (demo)', startAt: 0, endAt: 0, status: 'idle', payout: 5 }
-}
+  // HR
+  hireFieldOp: () => void;
 
-export const useGame = create<GameState>((set, get) => ({
+  // Field Ops contract (prototype)
+  contract: Contract;
+  startFieldContract: () => void;
+  resetContract: () => void;
+
+  // UI: TTC modal
+  ttcOpen: boolean;
+  openTTC: () => void;
+  closeTTC: () => void;
+
+  // UI: Toasts
+  toasts: Toast[];
+  addToast: (msg: string) => void;
+  removeToast: (id: number) => void;
+};
+
+// ---- Seed tunables used by the prototype loop (real values live in balance.ts later) ----
+const PAYROLL_PERIOD_MIN = MOON_PERIOD_DAYS * DAY_MINUTES; // every full moon
+const SEED_WAGE = 5;                 // trainee wage
+const CONTRACT_PAYOUT = 5;           // gold
+const CONTRACT_DURATION_MIN = 10;    // minutes
+const TOAST_MS = 2500;               // real milliseconds
+
+let toastSeq = 1;
+let runSeq = 1;
+
+// ---- Store implementation ----
+export const useGame = create<State>((set, get) => ({
+  // clock
   gameMinutes: 0,
   timeScale: 1,
+  setTimeScale: (x) => set({ timeScale: Math.max(0.1, Math.min(5, x)) }),
+
+  // money & payroll
   gold: 0,
-  projectedPayroll: 50,
-  payrollDueAt: nextPayrollDueAt(0),
-  demo: makeInitialMission(),
+  employees: [],
+  projectedPayroll: 0,
+  payrollDueAt: PAYROLL_PERIOD_MIN,
+  lastPayrollAt: -Infinity,
 
-  advance: (realDeltaMs: number) => {
-    const s = get()
-    const deltaMinutes = (realDeltaMs / 1000) * MINUTES_PER_REAL_SECOND * s.timeScale
-    let gameMinutes = s.gameMinutes + deltaMinutes
-    let { gold, payrollDueAt, projectedPayroll } = s
-    let demo = { ...s.demo }
+  // HR
+  hireFieldOp: () => {
+    const e: Employee = {
+      id: `fo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      dept: "FieldOps",
+      status: "Trainee",
+      wage: SEED_WAGE,
+    };
+    set((s) => {
+      const employees = [...s.employees, e];
+      const projectedPayroll = employees.reduce((a, p) => a + p.wage, 0);
+      return { employees, projectedPayroll };
+    });
+  },
 
-    if (demo.status === 'active' && gameMinutes >= demo.endAt) {
-      demo.status = 'complete'
-      gold += demo.payout
+  // Field Ops (one contract at a time for now)
+  contract: { runId: 0, name: "Contract", status: "idle", startAt: 0, endAt: 0, payout: CONTRACT_PAYOUT },
+
+  startFieldContract: () => {
+    const s = get();
+    if (s.contract.status === "active") return; // already running
+    const now = s.gameMinutes;
+    set({
+      contract: {
+        runId: runSeq++,
+        name: "Contract",
+        status: "active",
+        startAt: now,
+        endAt: now + CONTRACT_DURATION_MIN,
+        payout: CONTRACT_PAYOUT,
+      },
+    });
+  },
+
+  resetContract: () =>
+    set({
+      contract: { runId: 0, name: "Contract", status: "idle", startAt: 0, endAt: 0, payout: CONTRACT_PAYOUT },
+    }),
+
+  // TTC modal
+  ttcOpen: false,
+  openTTC: () => set({ ttcOpen: true }),
+  closeTTC: () => set({ ttcOpen: false }),
+
+  // Toasts
+  toasts: [],
+  addToast: (msg) => {
+    const id = toastSeq++;
+    set((s) => ({ toasts: [...s.toasts, { id, msg, createdAt: get().gameMinutes }] }));
+    if (typeof window !== "undefined") {
+      setTimeout(() => get().removeToast(id), TOAST_MS);
     }
+  },
+  removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
-    if (gameMinutes >= payrollDueAt) {
-      payrollDueAt = nextPayrollDueAt(gameMinutes)
-      projectedPayroll = projectedPayroll
-    }
-
-    set({ gameMinutes, gold, payrollDueAt, projectedPayroll, demo })
+  // time advance
+  advance: (realMs) => {
+    // 1s real = 1 minute game * timeScale
+    const deltaMin = (realMs / 1000) * get().timeScale;
+    tick(deltaMin, set, get);
   },
 
-  addMinutes: (mins: number) => {
-    const s = get()
-    get().advance((mins * 1000) / s.timeScale)
-  },
+  addMinutes: (mins) => tick(mins, set, get),
+}));
 
-  setTimeScale: (v: number) => set({ timeScale: v }),
+// ---- Internal tick ----
+function tick(deltaMin: number, set: any, get: any) {
+  if (deltaMin <= 0) return;
 
-  startDemoMission: (durationMins = 10) => {
-    const s = get()
-    if (s.demo.status === 'active') return
-    const startAt = s.gameMinutes
-    const endAt = startAt + durationMins
-    set({ demo: { ...s.demo, startAt, endAt, status: 'active' } })
-  },
+  // advance the authoritative clock
+  let newTime = get().gameMinutes + deltaMin;
 
-  resetDemo: () => set({ demo: makeInitialMission() }),
-}))
+  // payroll rollover — handle crossing multiple boundaries at once
+  let gold = get().gold;
+  let due = get().payrollDueAt;
+  const projected = get().employees.reduce((a: number, e: Employee) => a + e.wage, 0);
+
+  while (newTime >= due) {
+    gold -= projected;
+    get().addToast?.(`Paid ${projected}g in wages`);
+    due += PAYROLL_PERIOD_MIN;
+  }
+
+  // contract completion
+  const c = get().contract;
+  if (c.status === "active" && newTime >= c.endAt) {
+    gold += c.payout;
+    get().addToast?.(`Contract complete: +${c.payout}g`);
+    set({ contract: { ...c, status: "complete" } });
+  }
+
+  // commit tick results
+  set({ gameMinutes: newTime, gold, payrollDueAt: due, projectedPayroll: projected });
+}
